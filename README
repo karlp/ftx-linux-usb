@@ -1,0 +1,49 @@
+--- mail to linux-usb ----
+
+
+I've been using OpenWrt's "usb activity" led trigger to display
+usb-serial traffic over a cp210x dongle quite successfully, but after
+replacing the cp210x with a FT230x, I find that I get constant USB
+traffic (every millisecond) as soon as the port is opened.
+
+I've put a usbmon capture available here:
+https://github.com/karlp/ftx-linux-us...
+ (Captured with tcpdump -i usbmon1 -w ...., then opening the port with picocom, waiting, then exiting)
+
+This is from opening /dev/ttyUSB0 with picocom.  I've added ftdio_sio
+module debugging, which produces the following output
+
+[ 5829.430000] ftdi_sio ttyUSB0: Setting CS8
+[ 5829.430000] ftdi_sio ttyUSB0: get_ftdi_divisor - tty_get_baud_rate reports speed 19200
+[ 5829.430000] ftdi_sio ttyUSB0: get_ftdi_divisor - Baud rate set to 19200 (divisor 0x809C) on chip FT-X
+[ 5829.430000] ftdi_sio ttyUSB0: ftdi_set_termios Turning off hardware flow control
+[ 5829.430000] ftdi_sio ttyUSB0: update_mctrl - DTR HIGH, RTS HIGH
+[ 5829.430000] ftdi_sio ttyUSB0: ftdi_get_modem_status - 0x0160
+[ 5829.430000] ftdi_sio ttyUSB0: get_ftdi_divisor - tty_get_baud_rate reports speed 19200
+[ 5829.430000] ftdi_sio ttyUSB0: get_ftdi_divisor - Baud rate set to 19200 (divisor 0x809C) on chip FT-X
+[ 5829.430000] ftdi_sio ttyUSB0: ftdi_set_termios Turning off hardware flow control
+<<<<< exit from picocom here >>>>>
+[ 5856.460000] ftdi_sio ttyUSB0: ftdi_get_modem_status - 0x0160
+[ 5856.460000] ftdi_sio ttyUSB0: get_ftdi_divisor - tty_get_baud_rate reports speed 19200
+[ 5856.460000] ftdi_sio ttyUSB0: get_ftdi_divisor - Baud rate set to 19200 (divisor 0x809C) on chip FT-X
+[ 5856.460000] ftdi_sio ttyUSB0: ftdi_set_termios Turning off hardware flow control
+[ 5857.520000] ftdi_sio ttyUSB0: ftdi_get_modem_status - 0x0160
+
+It's important to note that /dev/ttyUSB0 still _works_ I just get
+substantially more usb traffic than I expect.  I do _not_ see this level
+of traffic with any FT232RL devices or cp210x devices, though,
+unfortunately, I can't test those with the same hardware.  The FT230x is
+permanently connected to a SMSC USB2640 hub on a custom board.  I also
+don't have a FT230x I can try on my desktop linux either at this stage.
+:(
+
+This is seen with kernel 3.18.12, but was originally seen with 3.10.49. 
+I can't see anything in the ftdio_sio driver other than new VID/PIDs
+since 3.18, so I haven't tried anything newer.  
+
+The usbmon traces seem to be a continual reporting of the "0x0160" shown
+in the ftdi_get_modem_status lines.  Is this actually _meant_ to be
+happening?  Can I turn it off?  Any other suggestions?
+
+Sincerely,
+Karl Palsson
